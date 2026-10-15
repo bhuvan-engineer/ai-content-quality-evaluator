@@ -42,6 +42,7 @@ with tab_generate:
         if not topic.strip():
             st.error("Please enter a topic or brief.")
         else:
+            demo_mode = not api_key_available
             try:
                 system_prompt, user_prompt = build_prompts(
                     content_type=content_type, language=language, prompt_style=prompt_style,
