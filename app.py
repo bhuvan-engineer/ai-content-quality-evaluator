@@ -49,7 +49,7 @@ with tab_generate:
                     tone=tone, length=length, audience=audience, topic=topic,
                     extra_instructions=extra_instructions
                 )
-                if demo_mode:
+if demo_mode:
     output = (
         f"[DEMO MODE — Sample content, not live AI output]\n\n"
         f"Topic: {topic}\n"
