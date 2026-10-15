@@ -134,31 +134,62 @@ with tab_compare:
         else:
             rows = []
             outputs = {}
-            try:
-                for lang in LANGUAGE_LABELS:
-                    sys_p, user_p = build_prompts(
-                        content_type=exp_type, language=lang, prompt_style=exp_style,
-                        tone=exp_tone, length=exp_length, audience=exp_audience,
-                        topic=exp_topic, extra_instructions=""
-                    )
-                    with st.spinner(f"Generating {LANGUAGE_LABELS[lang]} output..."):
-                        generated = generate_content(sys_p, user_p, model, temperature, max_tokens)
-                    ev = evaluate_content(generated, exp_type, exp_length)
-                    outputs[lang] = generated
-                    rows.append({
-                        "Language": LANGUAGE_LABELS[lang],
-                        "Word count": ev["word_count"],
-                        "Structure check": ev["structure_label"],
-                        "Filler count": ev["filler_count"],
-                        "Passed checks": sum(1 for x in ev["checks"] if x["passed"]),
-                        "Total checks": len(ev["checks"]),
-                        "Output": generated
-                    })
-                st.session_state["experiment_rows"] = rows
-                st.session_state["experiment_outputs"] = outputs
-            except Exception as exc:
-                st.error(f"Experiment failed: {exc}")
-                st.caption("Check your API key, model access, internet connection, and API billing/limits.")
+            
+try:
+    system_prompt, user_prompt = build_prompts(
+        content_type=content_type,
+        language=language,
+        prompt_style=prompt_style,
+        tone=tone,
+        length=length,
+        audience=audience,
+        topic=topic,
+        extra_instructions=extra_instructions
+    )
+
+    if demo_mode:
+        output = (
+            "[DEMO MODE - Sample content, not live AI output]\n\n"
+            f"Topic: {topic}\n"
+            f"Language: {language}\n"
+            f"Content type: {content_type}\n\n"
+            f"This is a sample draft about {topic}. "
+            "This demo shows how the application evaluates content."
+        )
+    else:
+        with st.spinner("Generating content with the selected model..."):
+            output = generate_content(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+    evaluation = evaluate_content(
+        output,
+        content_type=content_type,
+        expected_length=length
+    )
+    st.session_state["last_output"] = output
+    st.session_state["last_evaluation"] = evaluation
+    st.session_state["last_meta"] = {
+        "content_type": content_type,
+        "language": language,
+        "prompt_style": prompt_style,
+        "tone": tone,
+        "model": model,
+        "temperature": temperature,
+        "topic": topic
+    }
+
+except Exception as exc:
+    st.error(f"Could not generate content: {exc}")
+    st.caption(
+        "Check your API key, model access, internet connection, "
+        "and API billing/limits."
+    )
+
     if st.session_state.get("experiment_rows"):
         df = pd.DataFrame(st.session_state["experiment_rows"])
         st.dataframe(df.drop(columns=["Output"]), use_container_width=True, hide_index=True)
