@@ -43,40 +43,61 @@ with tab_generate:
             st.error("Please enter a topic or brief.")
         else:
             demo_mode = not api_key_available
-            try:
-                system_prompt, user_prompt = build_prompts(
-                    content_type=content_type, language=language, prompt_style=prompt_style,
-                    tone=tone, length=length, audience=audience, topic=topic,
-                    extra_instructions=extra_instructions
-                )
-if demo_mode:
-    output = (
-        f"[DEMO MODE — Sample content, not live AI output]\n\n"
-        f"Topic: {topic}\n"
-        f"Language: {language}\n"
-        f"Content type: {content_type}\n\n"
-        f"Here is a sample draft about {topic}. "
-        f"This demo illustrates how the application can display and "
-        f"evaluate content. Connect an API account with available credits "
-        f"to generate original AI content."
+            
+try:
+    system_prompt, user_prompt = build_prompts(
+        content_type=content_type,
+        language=language,
+        prompt_style=prompt_style,
+        tone=tone,
+        length=length,
+        audience=audience,
+        topic=topic,
+        extra_instructions=extra_instructions
     )
-else:
-    with st.spinner("Generating content with the selected model..."):
-        output = generate_content(
-            system_prompt=system_prompt, user_prompt=user_prompt,
-            model=model, temperature=temperature, max_tokens=max_tokens
+  if demo_mode:
+        output = (
+            "[DEMO MODE — Sample content, not live AI output]\n\n"
+            f"Topic: {topic}\n"
+            f"Language: {language}\n"
+            f"Content type: {content_type}\n\n"
+            f"This is a sample draft about {topic}. "
+            "This demo shows how the application evaluates content. "
+            "Live AI generation requires an API account with available credits."
         )
-                evaluation = evaluate_content(output, content_type=content_type, expected_length=length)
-                st.session_state["last_output"] = output
-                st.session_state["last_evaluation"] = evaluation
-                st.session_state["last_meta"] = {
-                    "content_type": content_type, "language": language,
-                    "prompt_style": prompt_style, "tone": tone, "model": model,
-                    "temperature": temperature, "topic": topic
-                }
-            except Exception as exc:
-                st.error(f"Could not generate content: {exc}")
-                st.caption("Check your API key, model access, internet connection, and API billing/limits.")
+    else:
+        with st.spinner("Generating content with the selected model..."):
+            output = generate_content(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+    evaluation = evaluate_content(
+        output,
+        content_type=content_type,
+        expected_length=length
+    )
+    st.session_state["last_output"] = output
+    st.session_state["last_evaluation"] = evaluation
+    st.session_state["last_meta"] = {
+        "content_type": content_type,
+        "language": language,
+        "prompt_style": prompt_style,
+        "tone": tone,
+        "model": model,
+        "temperature": temperature,
+        "topic": topic
+    }
+
+except Exception as exc:
+    st.error(f"Could not generate content: {exc}")
+    st.caption(
+        "Check your API key, model access, internet connection, "
+        "and API billing/limits."
+    )
 
     if st.session_state.get("last_output"):
         output = st.session_state["last_output"]
